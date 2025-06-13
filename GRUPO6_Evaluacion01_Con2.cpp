@@ -1,0 +1,357 @@
+#include <iostream>
+using namespace std;
+
+struct Proceso {
+    int id;
+    char nombre[30];
+    int prioridad;
+    int tamanoMemoria;
+    char estado[15];
+    Proceso* siguiente;
+};
+
+Proceso* inicio = NULL;
+Proceso* frenteCola = NULL;
+
+
+// Estructura para el bloque de memoria en la pila
+struct BloqueMemoria {
+    int idProceso;
+    int tamano;
+    BloqueMemoria* siguiente;
+};
+
+// Puntero al tope de la pila
+BloqueMemoria* topeMemoria = NULL;
+
+// Asignar memoria (push)
+void asignarMemoria() {
+    int id, tamano;
+    cout << "ID del proceso que solicita memoria: ";
+    cin >> id;
+    cout << "Tamaño de memoria a asignar (MB): ";
+    cin >> tamano;
+
+    BloqueMemoria* nuevo = new BloqueMemoria();
+    nuevo->idProceso = id;
+    nuevo->tamano = tamano;
+    nuevo->siguiente = topeMemoria;
+    topeMemoria = nuevo;
+
+    cout << "Memoria asignada correctamente.\n";
+}
+
+// Liberar memoria (pop)
+void liberarMemoria() {
+    if (topeMemoria == NULL) {
+        cout << "No hay memoria para liberar.\n";
+        return;
+    }
+
+    BloqueMemoria* temp = topeMemoria;
+    topeMemoria = topeMemoria->siguiente;
+
+    cout << "Memoria liberada del proceso ID: " << temp->idProceso << ", Tamaño: " << temp->tamano << " MB\n";
+    delete temp;
+}
+
+// Ver contenido de la pila de memoria
+void verMemoria() {
+    if (topeMemoria == NULL) {
+        cout << "La pila de memoria está vacía.\n";
+        return;
+    }
+
+    cout << "Contenido de la pila de memoria (LIFO):\n";
+    BloqueMemoria* actual = topeMemoria;
+    while (actual != NULL) {
+        cout << "-----------------------------\n";
+        cout << "ID Proceso: " << actual->idProceso << "\n";
+        cout << "Tamaño: " << actual->tamano << " MB\n";
+        actual = actual->siguiente;
+    }
+}
+
+
+// Insertar proceso al final
+void insertarProceso() {
+    Proceso* nuevo = new Proceso();
+    
+    cout << "ID del proceso: ";
+    cin >> nuevo->id;
+    cin.ignore();
+
+    cout << "Nombre del proceso: ";
+    cin.getline(nuevo->nombre, 30);
+
+    cout << "Prioridad (1-5): ";
+    cin >> nuevo->prioridad;
+
+
+    cin.ignore();
+    cout << "Estado (nuevo, listo, ejecutando, bloqueado, finalizado): ";
+    cin.getline(nuevo->estado, 15);
+
+    nuevo->siguiente = NULL;
+
+    if (inicio == NULL) {
+        inicio = nuevo;
+    } else {
+        Proceso* actual = inicio;
+        while (actual->siguiente != NULL) {
+            actual = actual->siguiente;
+        }
+        actual->siguiente = nuevo;
+    }
+
+    cout << "Proceso insertado correctamente.\n";
+}
+
+// Buscar proceso por ID
+void buscarProcesoPorID() {
+    int id;
+    cout << "Ingrese el ID a buscar: ";
+    cin >> id;
+
+    Proceso* actual = inicio;
+    while (actual != NULL) {
+        if (actual->id == id) {
+            cout << "Proceso encontrado:\n";
+            cout << "ID: " << actual->id << "\n";
+            cout << "Nombre: " << actual->nombre << "\n";
+            cout << "Prioridad: " << actual->prioridad << "\n";
+            cout << "Estado: " << actual->estado << "\n";
+            return;
+        }
+        actual = actual->siguiente;
+    }
+    cout << "Proceso no encontrado.\n";
+}
+
+// Modificar proceso por ID
+void modificarProceso() {
+    int id;
+    cout << "Ingrese el ID del proceso a modificar: ";
+    cin >> id;
+
+    Proceso* actual = inicio;
+    while (actual != NULL) {
+        if (actual->id == id) {
+            cout << "Proceso encontrado. ¿Qué desea modificar?\n";
+            cout << "1. Prioridad\n2. Estado\nOpción: ";
+            int opcion;
+            cin >> opcion;
+            cin.ignore();
+
+            if (opcion == 1) {
+                cout << "Nueva prioridad (1-5): ";
+                cin >> actual->prioridad;
+                cout << "Prioridad actualizada.\n";
+            } else if (opcion == 2) {
+                cout << "Nuevo estado: ";
+                cin.ignore();
+                cin.getline(actual->estado, 15);
+                cout << "Estado actualizado.\n";
+            } else {
+                cout << "Opción no válida.\n";
+            }
+            return;
+        }
+        actual = actual->siguiente;
+    }
+
+    cout << "Proceso no encontrado.\n";
+}
+
+// Eliminar proceso por ID
+void eliminarProceso() {
+    int id;
+    cout << "Ingrese el ID del proceso a eliminar: ";
+    cin >> id;
+
+    Proceso* actual = inicio;
+    Proceso* anterior = NULL;
+
+    while (actual != NULL && actual->id != id) {
+        anterior = actual;
+        actual = actual->siguiente;
+    }
+
+    if (actual == NULL) {
+        cout << "Proceso no encontrado.\n";
+        return;
+    }
+
+    if (anterior == NULL) {
+        inicio = actual->siguiente;
+    } else {
+        anterior->siguiente = actual->siguiente;
+    }
+
+    delete actual;
+    cout << "Proceso eliminado.\n";
+}
+
+// Mostrar todos los procesos
+void mostrarProcesos() {
+    Proceso* actual = inicio;
+    if (actual == NULL) {
+        cout << "No hay procesos registrados.\n";
+        return;
+    }
+
+    cout << "Lista de procesos:\n";
+    while (actual != NULL) {
+        cout << "-----------------------------\n";
+        cout << "ID: " << actual->id << "\n";
+        cout << "Nombre: " << actual->nombre << "\n";
+        cout << "Prioridad: " << actual->prioridad << "\n";
+        cout << "Estado: " << actual->estado << "\n";
+        actual = actual->siguiente;
+    }
+}
+void encolarProcesoDesdeRegistrados() {
+    int id;
+    cout << "Ingrese el ID del proceso que desea encolar: ";
+    cin >> id;
+
+    // Buscar en la lista de procesos registrados
+    Proceso* buscado = inicio;
+    while (buscado != NULL && buscado->id != id) {
+        buscado = buscado->siguiente;
+    }
+
+    if (buscado == NULL) {
+        cout << "Proceso no encontrado en la lista registrada.\n";
+        return;
+    }
+
+    // Crear una copia del proceso
+    Proceso* nuevo = new Proceso();
+    *nuevo = *buscado; // Copiar todos los datos
+    nuevo->siguiente = NULL; // Romper cualquier enlace anterior
+
+    // Insertar en la cola ordenada por prioridad
+    if (frenteCola == NULL || nuevo->prioridad < frenteCola->prioridad) {
+        nuevo->siguiente = frenteCola;
+        frenteCola = nuevo;
+    } else {
+        Proceso* actual = frenteCola;
+        while (actual->siguiente != NULL && actual->siguiente->prioridad <= nuevo->prioridad) {
+            actual = actual->siguiente;
+        }
+        nuevo->siguiente = actual->siguiente;
+        actual->siguiente = nuevo;
+    }
+
+    cout << "Proceso encolado desde registros existentes.\n";
+}
+
+
+
+void desencolarProcesoPorPrioridad() {
+    if (frenteCola == NULL) {
+        cout << "La cola está vacía. No hay procesos para eliminar.\n";
+        return;
+    }
+
+    Proceso* eliminado = frenteCola;
+    frenteCola = frenteCola->siguiente;
+
+    cout << "Proceso eliminado (mayor prioridad):\n";
+    cout << "ID: " << eliminado->id << "\n";
+    cout << "Nombre: " << eliminado->nombre << "\n";
+    cout << "Prioridad: " << eliminado->prioridad << "\n";
+    cout << "Estado: " << eliminado->estado << "\n";
+
+    delete eliminado;
+}
+
+void mostrarColaPrioridad() {
+    if (frenteCola == NULL) {
+        cout << "La cola de prioridad está vacía.\n";
+        return;
+    }
+
+    cout << "\nProcesos en la cola de prioridad (mayor prioridad al inicio):\n";
+    Proceso* actual = frenteCola;
+    while (actual != NULL) {
+        cout << "-----------------------------\n";
+        cout << "ID: " << actual->id << "\n";
+        cout << "Nombre: " << actual->nombre << "\n";
+        cout << "Prioridad: " << actual->prioridad << "\n";
+        cout << "Estado: " << actual->estado << "\n";
+        actual = actual->siguiente;
+    }
+}
+
+
+// Menú principal
+int main() {
+    int opcion;
+
+    do {
+        cout << "\n=== Administrador de Tareas ===\n";
+        cout << "1. Insertar proceso\n";
+        cout << "2. Buscar proceso por ID\n";
+        cout << "3. Modificar proceso\n";
+        cout << "4. Eliminar proceso\n";
+        cout << "5. Mostrar todos los procesos\n";
+        cout << "6. Asignar memoria\n";
+        cout << "7. Liberar memoria\n";
+        cout << "8. Ver pila de memoria\n";
+        cout << "9. Encolar proceso por prioridad\n";
+        cout << "10. Desencolar proceso con mayor prioridad\n";
+        cout << "11. Mostrar cola de prioridad\n";
+        cout << "0. Salir\n";
+        cout << "Seleccione una opción: ";
+        cin >> opcion;
+        cin.ignore();
+
+        switch (opcion) {
+            case 1:
+                insertarProceso();
+                break;
+            case 2:
+                buscarProcesoPorID();
+                break;
+            case 3:
+                modificarProceso();
+                break;
+            case 4:
+                eliminarProceso();
+                break;
+            case 5:
+                mostrarProcesos();
+                break;
+            case 6:
+                asignarMemoria();
+                break;
+            case 7:
+                liberarMemoria();
+                break;
+            case 8:
+                verMemoria();
+                break;
+            
+            case 9:
+                encolarProcesoDesdeRegistrados();
+                break;
+            case 10:
+                desencolarProcesoPorPrioridad();
+                break;
+            case 11:
+                mostrarColaPrioridad();
+                break;
+
+            case 0:
+                cout << "Saliendo del programa.\n";
+                break;
+            default:
+                cout << "Opción no válida.\n";
+        }
+
+    } while (opcion != 0);
+
+    return 0;
+}
